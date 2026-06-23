@@ -3,7 +3,7 @@ import multer from 'multer';
 import { Application } from '../models/ApplicationModel';
 import { Job } from '../models/JobModel';
 import { analyzeResume } from '../utils/resumeAnalyzer';
-import { parsePDF } from '../utils/pdfParser';
+import { extractTextFromPDF } from '../utils/pdfParser';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -58,16 +58,16 @@ router.post('/pre-check', upload.single('resume'), async (req: Request, res: Res
     }
 
     // Parse and analyze resume
-    const resumeText = await parsePDF(req.file.buffer);
+    const resumeText = await extractTextFromPDF(req.file.buffer);
     const analysis = await analyzeResume(resumeText);
 
     const result = {
-      canSubmit: analysis.ats_score >= 70,
+      canSubmit: analysis.overall_score >= 70,
       requiredScore: 70,
       fileName: req.file.originalname,
       fileSize: req.file.size,
       ...analysis,
-      message: analysis.ats_score >= 70
+      message: analysis.overall_score >= 70
         ? 'Your resume meets our standards!'
         : 'Your resume needs improvement to meet our minimum requirements'
     };
@@ -80,7 +80,7 @@ router.post('/pre-check', upload.single('resume'), async (req: Request, res: Res
     logger.info('Resume pre-check completed', {
       requestId: req.id,
       jobId,
-      ats_score: analysis.ats_score,
+      overall_score: analysis.overall_score,
       canSubmit: result.canSubmit,
       fileName: req.file.originalname
     });
@@ -107,7 +107,7 @@ router.post('/submit', async (req: Request, res: Response) => {
     }
 
     // Validate ATS score requirement
-    if (resumeAnalysis.ats_score < 70) {
+    if (resumeAnalysis.overall_score < 70) {
       return res.status(400).json({
         success: false,
         message: 'Resume ATS score must be at least 70 to apply. Please improve your resume and try again.'
@@ -177,7 +177,7 @@ router.post('/submit', async (req: Request, res: Response) => {
       applicationId: application._id,
       jobId,
       email: candidateInfo.email,
-      ats_score: resumeAnalysis.ats_score
+      overall_score: resumeAnalysis.overall_score
     });
   } catch (err: any) {
     logger.error('Application submission failed', { requestId: req.id, error: err });
@@ -213,10 +213,10 @@ router.get('/job/:jobId', async (req: Request, res: Response) => {
     const filter: any = { jobId };
     
     if (status) filter.status = status;
-    if (minScore) filter['resumeAnalysis.ats_score'] = { $gte: Number(minScore) };
+    if (minScore) filter['resumeAnalysis.overall_score'] = { $gte: Number(minScore) };
     if (maxScore) {
-      filter['resumeAnalysis.ats_score'] = filter['resumeAnalysis.ats_score'] || {};
-      filter['resumeAnalysis.ats_score'].$lte = Number(maxScore);
+      filter['resumeAnalysis.overall_score'] = filter['resumeAnalysis.overall_score'] || {};
+      filter['resumeAnalysis.overall_score'].$lte = Number(maxScore);
     }
 
     const skip = (Number(page) - 1) * Number(limit);
