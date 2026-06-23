@@ -19,6 +19,9 @@ import compareRouter from './routes/compareRoutes';
 import builderRouter from './routes/builderRoutes';
 import coverLetterRouter from './routes/coverLetterRoutes';
 import linkedinRouter from './routes/linkedinRoutes';
+import jobRouter from './routes/jobRoutes';
+import applicationRouter from './routes/applicationRoutes';
+import analyticsRouter from './routes/analyticsRoutes';
 
 const app = express();
 
@@ -47,6 +50,9 @@ app.use('/api', compareRouter);
 app.use('/api', builderRouter);
 app.use('/api', coverLetterRouter);
 app.use('/api', linkedinRouter);
+app.use('/api/jobs', jobRouter);
+app.use('/api/applications', applicationRouter);
+app.use('/api/analytics', analyticsRouter);
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -54,6 +60,14 @@ app.get('/health', (_req, res) => {
     environment: env.NODE_ENV,
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/', (_req, res) => {
+  res.json({
+    message: 'ResuPulse API',
+    version: '1.0.0',
+    status: 'running',
   });
 });
 
@@ -105,7 +119,13 @@ process.on('unhandledRejection', (reason: unknown) => {
   process.exit(1);
 });
 
-start().catch((err: Error) => {
-  logger.error('Failed to start server', { message: err.message });
-  process.exit(1);
-});
+// Only start server if not in Vercel serverless environment
+if (process.env.VERCEL !== '1') {
+  start().catch((err: Error) => {
+    logger.error('Failed to start server', { message: err.message });
+    process.exit(1);
+  });
+}
+
+// Export app for Vercel
+export default app;
