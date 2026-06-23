@@ -15,7 +15,7 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
     
     // Set content
     await page.setContent(html, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'domcontentloaded',
     });
 
     // Generate PDF

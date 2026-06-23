@@ -12,12 +12,15 @@ export interface ILinkedIn extends Document {
     feedback: string;
   }>;
   strengths: string[];
-  improvements: string[];
-  keyword_optimization: {
-    current_keywords: string[];
-    suggested_keywords: string[];
-  };
+  improvements: Array<{
+    priority: 'high' | 'medium' | 'low';
+    section: string;
+    recommendation: string;
+  }>;
+  keyword_optimization: number;
+  missing_keywords: string[];
   headline_suggestions: string[];
+  summary_feedback: string;
   createdAt: Date;
 }
 
@@ -33,12 +36,15 @@ const LinkedInSchema = new Schema<ILinkedIn>({
     feedback: { type: String },
   }],
   strengths: [{ type: String }],
-  improvements: [{ type: String }],
-  keyword_optimization: {
-    current_keywords: [{ type: String }],
-    suggested_keywords: [{ type: String }],
-  },
+  improvements: [{
+    priority: { type: String, enum: ['high', 'medium', 'low'] },
+    section: { type: String },
+    recommendation: { type: String },
+  }],
+  keyword_optimization: { type: Number, required: true },
+  missing_keywords: [{ type: String }],
   headline_suggestions: [{ type: String }],
+  summary_feedback: { type: String },
   createdAt: { type: Date, default: Date.now, index: true },
 });
 

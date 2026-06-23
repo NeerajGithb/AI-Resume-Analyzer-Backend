@@ -83,7 +83,6 @@ router.post(
         fileName: req.file.originalname,
         fileSize: req.file.size,
         companyName,
-        tone,
         ...result,
       });
       
