@@ -37,7 +37,6 @@
     "@types/mongoose": "^5.11.96",
     "@types/multer": "^2.1.0",
     "@types/node": "^26.0.0",
-    "@vercel/node": "^3.2.29",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
