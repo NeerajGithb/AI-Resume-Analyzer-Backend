@@ -19,12 +19,12 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 
     const pages = await Promise.all(
       Array.from({ length: pdf.numPages }, (_, i) =>
-        pdf.getPage(i + 1).then(p => p.getTextContent())
+        pdf.getPage(i + 1).then((p: any) => p.getTextContent())
       )
     );
 
     const text = pages
-      .flatMap(p => p.items)
+      .flatMap((p: any) => p.items)
       .map((item: any) => item.str)
       .join(' ')
       .trim();

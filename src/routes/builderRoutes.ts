@@ -4,8 +4,6 @@ import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { buildResume, BuilderInputSchema } from '../utils/resumeBuilder';
 import ResumeBuilderModel from '../models/ResumeBuilderModel';
-import { generateResumeHtml } from '../utils/htmlResumeTemplate';
-import { htmlToPdf } from '../utils/pdfGenerator';
 
 const router = Router();
 
@@ -86,55 +84,12 @@ router.get(
 );
 
 // ─── POST /api/builder/compile-pdf ────────────────────────────────────────────
+// PDF generation removed - feature not needed
 router.post(
   '/builder/compile-pdf',
   builderLimiter,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { resumeId } = req.body;
-
-    if (!resumeId) {
-      return next(new AppError(400, 'Resume ID is required'));
-    }
-
-    try {
-      // Fetch resume data from database
-      const resume = await ResumeBuilderModel.findById(resumeId);
-      
-      if (!resume) {
-        return next(new AppError(404, 'Resume not found'));
-      }
-
-      // Generate HTML from resume data
-      const html = generateResumeHtml({
-        name: resume.name,
-        phone: resume.phone,
-        email: resume.email,
-        linkedin: resume.linkedin,
-        github: resume.github,
-        leetcode: resume.leetcode,
-        degree: resume.degree,
-        institution: resume.institution,
-        location: resume.location,
-        graduationYear: resume.graduationYear,
-        skills: resume.skills,
-        summary: resume.summary,
-        projects: resume.projects,
-        achievements: resume.achievements,
-      });
-
-      // Convert HTML to PDF using Puppeteer
-      const pdfBuffer = await htmlToPdf(html);
-
-      // Send PDF
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"');
-      res.send(pdfBuffer);
-      
-      logger.info('PDF compiled successfully', { requestId: req.id, resumeId });
-    } catch (err: any) {
-      logger.error('PDF compilation error', { error: err.message });
-      next(new AppError(500, 'Failed to compile PDF'));
-    }
+    return next(new AppError(410, 'PDF generation feature has been removed'));
   },
 );
 
