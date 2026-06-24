@@ -1,31 +1,44 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { AppError } from '../middleware/errorHandler';
 
+// No worker needed in Node/serverless — legacy build handles it
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
 const MIN_TEXT_LENGTH = 50;
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  const uint8Array = new Uint8Array(buffer);
-  const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+  try {
+    const uint8Array = new Uint8Array(buffer);
 
-  let fullText = '';
+    const pdf = await pdfjsLib.getDocument({
+      data: uint8Array,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    }).promise;
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item) => ('str' in item ? item.str : ''))
-      .join(' ');
-    fullText += pageText + '\n';
-  }
-
-  const text = fullText.trim();
-
-  if (text.length < MIN_TEXT_LENGTH) {
-    throw new AppError(
-      422,
-      'The PDF appears to be empty or image-based (no extractable text). Please upload a text-based PDF.',
+    const pages = await Promise.all(
+      Array.from({ length: pdf.numPages }, (_, i) =>
+        pdf.getPage(i + 1).then(p => p.getTextContent())
+      )
     );
-  }
 
-  return text;
+    const text = pages
+      .flatMap(p => p.items)
+      .map((item: any) => item.str)
+      .join(' ')
+      .trim();
+
+    if (text.length < MIN_TEXT_LENGTH) {
+      throw new AppError(
+        422,
+        'PDF appears empty or image-based (no extractable text). Upload a text-based PDF.',
+      );
+    }
+
+    return text;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(422, 'Failed to parse PDF. Ensure the file is a valid PDF document.');
+  }
 }
